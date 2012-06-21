@@ -25,7 +25,23 @@ def naive(train_network, test_nodes):
     output_result(config.result_folder + "naive.csv", test_nodes, predict_list)
 
 
-# Read a directed graph from training data
+def neighbour_counting(train_network, test_nodes):
+    predict_list = dict()
+
+    for node in test_nodes:
+        predict_list[node] = list()
+        candidates = set()
+        for neighbour in train_network.neighbors(node):
+            for n in train_network.neighbors(neighbour):
+                candidates.add(n)
+        for n in list(candidates):
+            if n not in train_network.neighbors(node):
+                predict_list[node].append(n)
+
+    output_result(config.result_folder + "nc.csv", test_nodes, predict_list)
+
+
+# Read a directed graph from training data, return a networkx graph
 def read_network(fpath):
     graph = nx.DiGraph()
     fh = csv.reader( open(fpath, 'r') )
@@ -38,7 +54,7 @@ def read_network(fpath):
     return graph
 
 
-# Read a list of source nodes from test data
+# Read a list of source nodes from test data and return the list
 def read_test(fpath):
     nodes = []
     fh = open(fpath, 'r')
@@ -61,8 +77,10 @@ if __name__ == "__main__":
     train_network = read_network(config.train_fpath)
     test_nodes = read_test(config.test_fpath)
 
-    g = nx.Graph(train_network) # convert to undirected graph
-    print len(nx.connected_components(g))
+    #g = nx.Graph(train_network) # convert to undirected graph
+    #print train_network.number_of_nodes()
+
 
     #naive(train_network, test_nodes)
 
+    neighbour_counting(train_network, test_nodes)
