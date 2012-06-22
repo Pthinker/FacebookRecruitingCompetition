@@ -2,6 +2,8 @@
 
 import csv
 import networkx as nx
+from operator import *
+import heapq
 
 import config
 
@@ -18,11 +20,34 @@ def naive(train_network, test_nodes):
     predict_list = dict()
     for node in test_nodes:
         if node in missing_nodes:
-            predict_list[node] = list(missing_nodes[node])
+            predict_list[node] = missing_nodes[node]
         else:
-            predict_list[node] = list()
+            predict_list[node] = set()
 
-    output_result(config.result_folder + "naive.csv", test_nodes, predict_list)
+    for node in test_nodes:
+        candidates = set()
+        for neighbour in train_network.neighbors(node):
+            for n in train_network.neighbors(neighbour):
+                if n != node:
+                    candidates.add(n)
+        for n in list(candidates):
+            if (n not in train_network.neighbors(node)):
+                predict_list.setdefault(node, set()).add(n)
+    
+    for node in predict_list:
+        neighbor_set = set(train_network.neighbors(node))
+        candidates = list(predict_list[node])
+        similarity = dict()
+        for candidate in candidates:
+            candidate_neighbor_set = set(train_network.neighbors(candidate))
+            similarity[candidate] = neighbor_set.union(candidate_neighbor_set)
+        records = heapq.nlargest(10, similarity.iteritems(), itemgetter(1))
+        ranked_list = []
+        for rec in records:
+            ranked_list.append(rec[0])
+        predict_list[node] = ranked_list
+
+    output_result(config.result_folder + "naive_nc_rank.csv", test_nodes, predict_list)
 
 
 def neighbour_counting(train_network, test_nodes):
@@ -81,6 +106,6 @@ if __name__ == "__main__":
     #print train_network.number_of_nodes()
 
 
-    #naive(train_network, test_nodes)
+    naive(train_network, test_nodes)
 
-    neighbour_counting(train_network, test_nodes)
+    #neighbour_counting(train_network, test_nodes)
